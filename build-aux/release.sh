@@ -34,10 +34,12 @@ mv crun-*.tar.xz $OUTDIR
 
 make distclean
 
-make -C contrib/static-builder-x86_64 build-image RUNTIME=$RUNTIME
-make -C contrib/static-builder-x86_64 build-crun CRUN_SOURCE=$(pwd) RUNTIME=$RUNTIME
+RUNTIME=${RUNTIME:-podman}
+mkdir -p /nix
+$RUNTIME run --rm --privileged -v /:/mnt nixos/nix cp -rfT /nix /mnt/nix
+$RUNTIME run --rm --privileged -v /nix:/nix -v ${PWD}:${PWD} -w ${PWD} nixos/nix nix --print-build-logs --option cores 8 --option max-jobs 8 build --file nix/
 
-mv crun $OUTDIR/crun-$VERSION-static-x86_64
+mv ./result/bin/crun $OUTDIR/crun-$VERSION-static-x86_64
 
 if test x$SKIP_GPG = x; then
     for i in $OUTDIR/*; do
